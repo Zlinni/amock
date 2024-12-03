@@ -34,7 +34,29 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(matchedEndpoint.responseBody);
+    // 获取分页参数
+    const searchParams = request.nextUrl.searchParams;
+    const page = parseInt(searchParams.get('page') || '1');
+    const pageSize = parseInt(searchParams.get('pageSize') || '10');
+
+    // 从响应体中获取列表数据
+    const responseData = matchedEndpoint.responseBody.data;
+    const entityList = responseData[`${entity}_list`];
+    const total = responseData.total;
+
+    // 计算分页
+    const start = (page - 1) * pageSize;
+    const end = start + pageSize;
+    const paginatedList = entityList.slice(start, end);
+
+    return NextResponse.json({
+      code: 0,
+      data: {
+        [`${entity}_list`]: paginatedList,
+        total: total
+      },
+      msg: "success"
+    });
   } catch (error) {
     console.error("获取数据失败:", error);
     return NextResponse.json(

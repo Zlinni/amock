@@ -9,7 +9,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { mockStorage } from "@/lib/storage";
 import { v4 as uuidv4 } from "uuid";
-import { generateMockEndpoints } from "@/lib/openai";
+import { generateMockEndpoints, generateSingleEndpoint } from "@/lib/openai";
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,12 +27,14 @@ export async function POST(request: NextRequest) {
     }
 
     const mockEndpoints = await generateMockEndpoints(description);
-
-    // 为每个端点生成唯一ID并保存
-    for (const endpoint of mockEndpoints) {
-      const id = uuidv4();
-      await mockStorage.set(id, { ...endpoint, id });
-    }
+    
+    // 并发保存所有端点
+    await Promise.all(
+      mockEndpoints.map(async (endpoint) => {
+        const id = uuidv4();
+        await mockStorage.set(id, { ...endpoint, id });
+      })
+    );
 
     return NextResponse.json({
       code: 0,

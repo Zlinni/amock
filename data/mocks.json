@@ -1,275 +1,144 @@
 {
-  "users": {
-    "5d6940b1-0fcc-45c0-abd5-c30a12ec337e": {
-      "path": "/api/users",
+  "car": {
+    "bc4e3521-c506-494b-8641-a8c5ee8954ed": {
+      "path": "/api/car",
       "method": "GET",
-      "description": "获取用户列表",
+      "description": "获取汽车列表。汽车是一种用于运输乘客和货物的机动车辆，通常由内燃机或电动机驱动，并具有四个轮子和所需的安全和便利设施。",
       "responseBody": {
         "code": 0,
-        "data": [
-          {
-            "userID": 1,
-            "username": "example_user",
-            "email": "user@example.com",
-            "phoneNumber": "1234567890",
-            "registrationDate": "2023-01-01T00:00:00Z",
-            "lastLoginTime": "2023-01-02T00:00:00Z",
-            "role": "admin",
-            "status": "active",
-            "avatar": "http://example.com/avatar1.png"
+        "data": {
+          "car_list": [
+            {
+              "id": 1,
+              "make": "Toyota",
+              "model": "Camry",
+              "year": 2022,
+              "engine": "Internal Combustion",
+              "wheels": 4,
+              "features": [
+                "Air Conditioning",
+                "Power Steering",
+                "Anti-lock Braking System"
+              ]
+            },
+            {
+              "id": 2,
+              "make": "Tesla",
+              "model": "Model 3",
+              "year": 2023,
+              "engine": "Electric",
+              "wheels": 4,
+              "features": [
+                "Autopilot",
+                "Integrated Navigation System",
+                "Air Bags"
+              ]
+            }
+          ],
+          "total": 2
+        },
+        "msg": "success"
+      },
+      "id": "bc4e3521-c506-494b-8641-a8c5ee8954ed"
+    },
+    "9e4b135c-012f-4f5b-bce2-ecf6159ebf7c": {
+      "path": "/api/car/{id}",
+      "method": "GET",
+      "description": "获取汽车的详细信息，包括车型、品牌、价格、发动机类型和其他详细数据",
+      "responseBody": {
+        "code": 0,
+        "data": {
+          "car": {
+            "id": 123,
+            "brand": "Toyota",
+            "model": "Camry",
+            "year": 2023,
+            "price": 30000,
+            "engine_type": "Hybrid",
+            "color": "Red",
+            "mileage": 12000,
+            "features": [
+              "Air Conditioning",
+              "Navigation System",
+              "Backup Camera"
+            ]
           }
-        ],
+        },
         "msg": "success"
       },
-      "id": "5d6940b1-0fcc-45c0-abd5-c30a12ec337e"
+      "id": "9e4b135c-012f-4f5b-bce2-ecf6159ebf7c"
     },
-    "ed740a74-5c35-4f08-bf57-18c0500eac1d": {
-      "path": "/api/users",
+    "896b44c4-bf3c-4d60-82b7-7708a42909ea": {
+      "path": "/api/car",
       "method": "POST",
-      "description": "创建新用户",
+      "description": "创建新的汽车记录。汽车是一种用于运输乘客和货物的机动车辆，通常由内燃机或电动机驱动，并具有四个轮子和所需的安全和便利设施。",
       "requestBody": {
-        "username": "new_user",
-        "password": "password123",
-        "email": "newuser@example.com",
-        "phoneNumber": "0987654321",
-        "role": "user",
-        "status": "active",
-        "avatar": "http://example.com/avatar2.png"
+        "make": "string (汽车制造商)",
+        "model": "string (汽车型号)",
+        "year": "number (制造年份)",
+        "color": "string (汽车颜色)",
+        "engine_type": "string (发动机类型，例如‘内燃机’或‘电动’)",
+        "vin": "string (车辆识别码)"
       },
       "responseBody": {
         "code": 0,
         "data": {
-          "userID": 2,
-          "username": "new_user",
-          "email": "newuser@example.com",
-          "phoneNumber": "0987654321",
-          "registrationDate": "2023-01-10T00:00:00Z",
-          "lastLoginTime": null,
-          "role": "user",
-          "status": "active",
-          "avatar": "http://example.com/avatar2.png"
-        },
-        "msg": "success"
-      },
-      "id": "ed740a74-5c35-4f08-bf57-18c0500eac1d"
-    },
-    "9ee12647-fb50-4752-89f6-4f6e08ab7dc0": {
-      "path": "/api/users/{id}",
-      "method": "GET",
-      "description": "获取指定用户的信息",
-      "responseBody": {
-        "code": 0,
-        "data": {
-          "userID": 1,
-          "username": "example_user",
-          "email": "user@example.com",
-          "phoneNumber": "1234567890",
-          "registrationDate": "2023-01-01T00:00:00Z",
-          "lastLoginTime": "2023-01-02T00:00:00Z",
-          "role": "admin",
-          "status": "active",
-          "avatar": "http://example.com/avatar1.png"
-        },
-        "msg": "success"
-      },
-      "id": "9ee12647-fb50-4752-89f6-4f6e08ab7dc0"
-    },
-    "e11b58ea-0120-4e19-b0f9-f1e3ec710319": {
-      "path": "/api/users/{id}",
-      "method": "PUT",
-      "description": "更新指定用户的信息",
-      "requestBody": {
-        "username": "updated_user",
-        "email": "updateduser@example.com",
-        "phoneNumber": "1122334455",
-        "role": "user",
-        "status": "active",
-        "avatar": "http://example.com/avatar3.png"
-      },
-      "responseBody": {
-        "code": 0,
-        "data": {
-          "userID": 1,
-          "username": "updated_user",
-          "email": "updateduser@example.com",
-          "phoneNumber": "1122334455",
-          "registrationDate": "2023-01-01T00:00:00Z",
-          "lastLoginTime": "2023-01-02T00:00:00Z",
-          "role": "user",
-          "status": "active",
-          "avatar": "http://example.com/avatar3.png"
-        },
-        "msg": "success"
-      },
-      "id": "e11b58ea-0120-4e19-b0f9-f1e3ec710319"
-    },
-    "ed61c1b9-b264-443f-999a-0eea4a12dd85": {
-      "path": "/api/users/{id}",
-      "method": "DELETE",
-      "description": "删除指定用户",
-      "responseBody": {
-        "code": 0,
-        "data": {
-          "userID": 1
-        },
-        "msg": "success"
-      },
-      "id": "ed61c1b9-b264-443f-999a-0eea4a12dd85"
-    }
-  },
-  "books": {
-    "c39caf02-5a04-4931-b9c4-ab6d31c0734e": {
-      "path": "/api/books",
-      "method": "GET",
-      "description": "获取图书列表",
-      "responseBody": {
-        "code": 0,
-        "data": [
-          {
-            "id": 1,
-            "title": "示例书籍",
-            "author": "示例作者",
-            "publication_date": "2023-10-01",
-            "isbn": "978-3-16-148410-0",
-            "publisher": "示例出版社",
-            "category": "小说",
-            "page_count": 350,
-            "language": "中文",
-            "summary": "这是一本示例书籍的简介。",
-            "cover_image": "http://example.com/cover.jpg",
-            "price": 49.99,
-            "edition": "第一版",
-            "rating": 4.5,
-            "stock_quantity": 100
+          "car": {
+            "id": "number (汽车ID)",
+            "make": "string (汽车制造商)",
+            "model": "string (汽车型号)",
+            "year": "number (制造年份)",
+            "color": "string (汽车颜色)",
+            "engine_type": "string (发动机类型)",
+            "vin": "string (车辆识别码)"
           }
-        ],
-        "msg": "success"
-      },
-      "id": "c39caf02-5a04-4931-b9c4-ab6d31c0734e"
-    },
-    "212f270f-4188-4f1a-bbd9-b1f9b1d04613": {
-      "path": "/api/books",
-      "method": "POST",
-      "description": "创建新图书",
-      "requestBody": {
-        "title": "图书名称",
-        "author": "作者名称",
-        "publication_date": "出版日期",
-        "isbn": "ISBN编号",
-        "publisher": "出版社",
-        "category": "图书类别",
-        "page_count": "图书页数",
-        "language": "图书语言",
-        "summary": "图书简介",
-        "cover_image": "封面图片链接",
-        "price": "图书价格",
-        "edition": "图书版次",
-        "rating": "图书评分",
-        "stock_quantity": "库存数量"
-      },
-      "responseBody": {
-        "code": 0,
-        "data": {
-          "id": 1,
-          "title": "示例书籍",
-          "author": "示例作者",
-          "publication_date": "2023-10-01",
-          "isbn": "978-3-16-148410-0",
-          "publisher": "示例出版社",
-          "category": "小说",
-          "page_count": 350,
-          "language": "中文",
-          "summary": "这是一本示例书籍的简介。",
-          "cover_image": "http://example.com/cover.jpg",
-          "price": 49.99,
-          "edition": "第一版",
-          "rating": 4.5,
-          "stock_quantity": 100
         },
         "msg": "success"
       },
-      "id": "212f270f-4188-4f1a-bbd9-b1f9b1d04613"
+      "id": "896b44c4-bf3c-4d60-82b7-7708a42909ea"
     },
-    "b910a01b-6102-43e3-998b-ed4de46e3f73": {
-      "path": "/api/books/{id}",
-      "method": "GET",
-      "description": "获取特定图书详情",
-      "responseBody": {
-        "code": 0,
-        "data": {
-          "id": 1,
-          "title": "示例书籍",
-          "author": "示例作者",
-          "publication_date": "2023-10-01",
-          "isbn": "978-3-16-148410-0",
-          "publisher": "示例出版社",
-          "category": "小说",
-          "page_count": 350,
-          "language": "中文",
-          "summary": "这是一本示例书籍的简介。",
-          "cover_image": "http://example.com/cover.jpg",
-          "price": 49.99,
-          "edition": "第一版",
-          "rating": 4.5,
-          "stock_quantity": 100
-        },
-        "msg": "success"
-      },
-      "id": "b910a01b-6102-43e3-998b-ed4de46e3f73"
-    },
-    "f0539be9-8d06-4c0b-9577-99c5673b04be": {
-      "path": "/api/books/{id}",
+    "19102674-190a-4cee-8d1e-0b6ea04d6f6d": {
+      "path": "/api/car/{id}",
       "method": "PUT",
-      "description": "更新图书信息",
+      "description": "更新汽车是一种用于运输乘客和货物的机动车辆，通常由内燃机或电动机驱动，并具有四个轮子和所需的安全和便利设施。的相关信息",
       "requestBody": {
-        "title": "图书名称",
-        "author": "作者名称",
-        "publication_date": "出版日期",
-        "isbn": "ISBN编号",
-        "publisher": "出版社",
-        "category": "图书类别",
-        "page_count": "图书页数",
-        "language": "图书语言",
-        "summary": "图书简介",
-        "cover_image": "封面图片链接",
-        "price": "图书价格",
-        "edition": "图书版次",
-        "rating": "图书评分",
-        "stock_quantity": "库存数量"
+        "id": "123",
+        "brand": "Toyota",
+        "model": "Camry",
+        "year": 2021,
+        "engine_type": "Hybrid",
+        "color": "Blue",
+        "mileage": 15000,
+        "price": 30000
       },
       "responseBody": {
         "code": 0,
         "data": {
-          "id": 1,
-          "title": "示例书籍",
-          "author": "示例作者",
-          "publication_date": "2023-10-01",
-          "isbn": "978-3-16-148410-0",
-          "publisher": "示例出版社",
-          "category": "小说",
-          "page_count": 350,
-          "language": "中文",
-          "summary": "这是一本示例书籍的简介。",
-          "cover_image": "http://example.com/cover.jpg",
-          "price": 49.99,
-          "edition": "第一版",
-          "rating": 4.5,
-          "stock_quantity": 100
+          "car": {
+            "id": "123",
+            "brand": "Toyota",
+            "model": "Camry",
+            "year": 2021,
+            "engine_type": "Hybrid",
+            "color": "Blue",
+            "mileage": 15000,
+            "price": 30000
+          }
         },
         "msg": "success"
       },
-      "id": "f0539be9-8d06-4c0b-9577-99c5673b04be"
+      "id": "19102674-190a-4cee-8d1e-0b6ea04d6f6d"
     },
-    "2e2aa3b7-bdb0-4173-b632-fd35bee84547": {
-      "path": "/api/books/{id}",
+    "d98227f5-3011-47fb-b293-598b191f8e63": {
+      "path": "/api/car/{id}",
       "method": "DELETE",
-      "description": "删除图书",
+      "description": "删除某辆汽车，汽车是一种用于运输乘客和货物的机动车辆，通常由内燃机或电动机驱动，并具有四个轮子和所需的安全和便利设施。",
       "responseBody": {
         "code": 0,
-        "data": null,
+        "data": {},
         "msg": "success"
       },
-      "id": "2e2aa3b7-bdb0-4173-b632-fd35bee84547"
+      "id": "d98227f5-3011-47fb-b293-598b191f8e63"
     }
   }
 }

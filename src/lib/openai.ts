@@ -4,9 +4,13 @@ import dedent from "dedent";
 
 // 初始化OpenAI客户端
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || "",
-  baseURL: process.env.OPENAI_BASE_URL,
+  apiKey: process.env.OPENAI_API_KEY,
 });
+
+// 获取要使用的模型
+const getModel = () => {
+  return process.env.OPENAI_MODEL || 'gpt-4o-mini';
+};
 
 export interface MockEndpoint {
   id: string;
@@ -22,103 +26,190 @@ export interface MockEndpoint {
 }
 
 // 优化提示词
-async function optimizePrompt(input: string): Promise<string> {
+export async function optimizePrompt(description: string): Promise<string> {
   try {
     const completion = await openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL || "gpt-3.5-turbo",
-      temperature: 0.7,
+      model: getModel(),
+      response_format: { type: "text" },
       messages: [
         {
           role: "system",
           content: dedent`
-            你是一个API设计专家。请根据用户的输入，生成一个详细的实体描述。
+            你是一个 API 设计专家，负责优化用户的 API 描述。
+            请根据用户的输入，生成一个更专业、更完整的描述。
             要求：
-            1. 分析用户输入，理解用户意图
-            2. 补充必要的字段和属性
-            3. 使用专业的术语
-            4. 保持简洁但完整
-            5. 返回一句完整的中文描述
+            1. 保持简洁但完整
+            2. 使用专业的术语
+            3. 返回一句完整的中文描述
           `,
         },
         {
           role: "user",
-          content: input,
+          content: description,
         },
       ],
     });
 
-    const description = completion.choices[0]?.message?.content;
-    if (!description) {
-      throw new Error("优化提示词失败");
-    }
-
-    return description;
+    return completion.choices[0].message.content || description;
   } catch (error) {
-    console.error("优化提示词失败:", error);
-    return input;
+    console.error('优化描述失败:', error);
+    return description;
   }
 }
 
-export async function generateMockEndpoints(description: string): Promise<MockEndpoint[]> {
+// 获取实体名称
+async function getEntityName(description: string): Promise<string> {
   try {
-    // 首先优化提示词
-    const optimizedDescription = await optimizePrompt(description);
-    
     const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo-1106",
+      model: getModel(),
       response_format: { type: "json_object" },
       messages: [
         {
           role: "system",
           content: dedent`
-            你是一个 API 设计专家，负责生成 RESTful API 的 Mock 数据。
-            请根据用户的描述，生成符合 RESTful 规范的 API 端点。
-            你需要返回一个 JSON 格式的响应。
-
+            你是一个 API 设计专家，负责确定 API 的实体名称。
+            请根据用户的描述，生成一个合适的实体名称（英文小写）。
+            
             要求：
-            1. 生成标准的 CRUD 操作端点
-            2. 路径必须以 /api/ 开头，后面跟着实体名称（英文小写）
-            3. 对于 POST/PUT 请求，提供合理的请求体结构
-            4. 所有响应必须符合统一格式：{ code: 0, data: any, msg: "success" }
-            5. 为每个端点提供清晰的中文描述
-            6. 响应必须是有效的 JSON 格式
-
-            响应格式示例：
+            1. 使用英文小写
+            2. 使用单数形式
+            3. 使用简单且常见的单词
+            4. 返回 JSON 格式
+            
+            示例输入：用户管理
+            示例输出：
             {
-              "mockEndpoints": [
+              "entity": "user"
+            }
+          `,
+        },
+        {
+          role: "user",
+          content: description,
+        },
+      ],
+    });
+
+    const result = JSON.parse(completion.choices[0].message.content || "{}");
+    if (!result.entity) {
+      throw new Error('生成实体名称失败');
+    }
+    return result.entity;
+  } catch (error) {
+    console.error('获取实体名称失败:', error);
+    throw error;
+  }
+}
+
+export async function generateMockEndpoints(description: string): Promise<MockEndpoint[]> {
+  try {
+    // 首先获取实体名称
+    const entityName = await getEntityName(description);
+    console.log('使用实体名称:', entityName);
+    
+    // 优化描述
+    const optimizedDescription = await optimizePrompt(description);
+    
+    // 定义需要生成的接口类型
+    const endpointTypes = [
+      { method: 'GET', isList: true, description: `${optimizedDescription} 的列表查询接口` },
+      { method: 'GET', isList: false, description: `${optimizedDescription} 的详情查询接口` },
+      { method: 'POST', isList: false, description: `${optimizedDescription} 的创建接口` },
+      { method: 'PUT', isList: false, description: `${optimizedDescription} 的更新接口` },
+      { method: 'DELETE', isList: false, description: `${optimizedDescription} 的删除接口` }
+    ];
+
+    // 并发生成所有接口
+    const endpoints = await Promise.all(
+      endpointTypes.map(async ({ method, isList, description }) => {
+        const completion = await openai.chat.completions.create({
+          model: getModel(),
+          response_format: { type: "json_object" },
+          messages: [
+            {
+              role: "system",
+              content: dedent`
+                你是一个 API 设计专家，负责生成 RESTful API 的 Mock 数据。
+                请根据用户的描述，生成一个 ${method} 类型的 API 端点。
+                实体名称必须使用: ${entityName}
+                ${isList ? '这是一个列表查询接口，需要支持分页。' : '这是一个单个实体操作接口。'}
+
+                要求：
+                1. 路径必须使用 /api/${entityName} 或 /api/${entityName}/{id}
+                2. 对于 POST/PUT 请求，提供合理的请求体结构
+                3. 所有响应必须符合统一格式：{ code: 0, data: any, msg: "success" }
+                4. 为端点提供清晰的中文描述
+                5. 响应必须是有效的 JSON 格式
+                6. 列表查询接口的 data 结构为：{ ${entityName}_list: 数组, total: 总数 }
+                7. 单个实体查询接口的 data 结构为：{ ${entityName}: 实体数据 }
+
+                响应格式示例：
                 {
-                  "path": "/api/users",
-                  "method": "GET",
-                  "description": "获取用户列表",
-                  "responseBody": {
-                    "code": 0,
-                    "data": [
-                      {
-                        "id": 1,
-                        "name": "示例用户"
-                      }
-                    ],
-                    "msg": "success"
-                  }
-                },
-                {
-                  "path": "/api/users",
-                  "method": "POST",
-                  "description": "创建新用户",
-                  "requestBody": {
-                    "name": "用户名"
-                  },
-                  "responseBody": {
-                    "code": 0,
-                    "data": {
-                      "id": 1,
-                      "name": "示例用户"
-                    },
-                    "msg": "success"
+                  "mockEndpoint": {
+                    "path": "/api/${entityName}",
+                    "method": "GET",
+                    "description": "获取${optimizedDescription}列表",
+                    "responseBody": {
+                      "code": 0,
+                      "data": {
+                        "${entityName}_list": [],
+                        "total": 0
+                      },
+                      "msg": "success"
+                    }
                   }
                 }
-              ]
-            }
+              `,
+            },
+            {
+              role: "user",
+              content: description,
+            },
+          ],
+        });
+
+        const result = JSON.parse(completion.choices[0].message.content || "{}");
+        if (!result.mockEndpoint) {
+          throw new Error('生成的端点格式不正确');
+        }
+        
+        // 验证生成的端点是否使用了正确的实体名称
+        if (!result.mockEndpoint.path.includes(entityName)) {
+          throw new Error('生成的端点使用了错误的实体名称');
+        }
+        
+        return result.mockEndpoint;
+      })
+    );
+
+    return endpoints;
+  } catch (error) {
+    console.error('生成 Mock 端点失败:', error);
+    throw error;
+  }
+}
+
+// 新增一个函数用于生成特定类型的端点
+export async function generateSingleEndpoint(
+  description: string,
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+  isList: boolean = false
+): Promise<MockEndpoint> {
+  try {
+    const optimizedDescription = await optimizePrompt(
+      `为 ${description} 生成一个 ${method} ${isList ? '列表' : '详情'} 接口`
+    );
+    
+    const completion = await openai.chat.completions.create({
+      model: getModel(),
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: dedent`
+            生成一个 ${method} 类型的 API 端点。
+            ${isList ? '这是一个列表查询接口，需要支持分页。' : '这是一个单个实体操作接口。'}
+            请确保响应格式符合规范。
           `,
         },
         {
@@ -128,32 +219,10 @@ export async function generateMockEndpoints(description: string): Promise<MockEn
       ],
     });
 
-    const result = JSON.parse(completion.choices[0].message.content || '{}');
-    
-    if (!result.mockEndpoints || !Array.isArray(result.mockEndpoints)) {
-      throw new Error('生成的数据格式不正确');
-    }
-
-    // 验证和规范化每个端点
-    const validEndpoints = result.mockEndpoints.filter((endpoint: any) => {
-      return endpoint && 
-             typeof endpoint.path === 'string' && 
-             endpoint.path.startsWith('/api/') &&
-             typeof endpoint.method === 'string' &&
-             typeof endpoint.description === 'string';
-    });
-
-    if (validEndpoints.length === 0) {
-      throw new Error('没有生成有效的端点');
-    }
-
-    // 为每个端点添加 ID
-    return validEndpoints.map((endpoint: Omit<MockEndpoint, 'id'>) => ({
-      ...endpoint,
-      id: uuidv4(),
-    }));
+    const result = JSON.parse(completion.choices[0].message.content || "{}");
+    return result.mockEndpoint;
   } catch (error) {
-    console.error('生成Mock数据失败:', error);
+    console.error('生成单个端点失败:', error);
     throw error;
   }
 }

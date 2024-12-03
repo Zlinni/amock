@@ -71,7 +71,16 @@ export function MockList() {
 
   const testEndpoint = async (endpoint: MockEndpoint) => {
     try {
-      const response = await fetch(endpoint.path);
+      const path = endpoint.path.replace('{id}', '1');
+      const response = await fetch(path, {
+        method: endpoint.method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: endpoint.method !== 'GET' && endpoint.method !== 'DELETE' 
+          ? JSON.stringify(endpoint.requestBody || {})
+          : undefined,
+      });
       const data: ApiResponse<unknown> = await response.json();
       setTestResult({
         endpoint,

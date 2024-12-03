@@ -11,7 +11,7 @@ export async function GET(
     
     // 查找匹配的端点
     const matchedEndpoint = mockEndpoints.find(
-      endpoint => endpoint.path === `/api/${entity}/:id` && endpoint.method === 'GET'
+      endpoint => endpoint.path === `/api/${entity}/{id}` && endpoint.method === 'GET'
     );
 
     if (!matchedEndpoint) {
@@ -25,6 +25,7 @@ export async function GET(
       );
     }
 
+    // 直接返回原始响应体，因为 mock 数据中已经包含了正确的结构
     return NextResponse.json(matchedEndpoint.responseBody);
   } catch (error) {
     console.error("获取数据失败:", error);
@@ -49,7 +50,7 @@ export async function PUT(
     
     // 查找匹配的端点
     const matchedEndpoint = mockEndpoints.find(
-      endpoint => endpoint.path === `/api/${entity}/:id` && endpoint.method === 'PUT'
+      endpoint => endpoint.path === `/api/${entity}/{id}` && endpoint.method === 'PUT'
     );
 
     if (!matchedEndpoint) {
@@ -87,7 +88,7 @@ export async function DELETE(
     
     // 查找匹配的端点
     const matchedEndpoint = mockEndpoints.find(
-      endpoint => endpoint.path === `/api/${entity}/:id` && endpoint.method === 'DELETE'
+      endpoint => endpoint.path === `/api/${entity}/{id}` && endpoint.method === 'DELETE'
     );
 
     if (!matchedEndpoint) {
