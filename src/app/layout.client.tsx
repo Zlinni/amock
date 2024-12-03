@@ -1,17 +1,16 @@
 "use client";
 
-import { Inter } from "next/font/google";
-import "./globals.css";
-import { ThemeProvider } from "@/lib/theme-context";
 import { useTheme } from "@/lib/theme-context";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 
-const inter = Inter({ subsets: ["latin"] });
-
-function AppLayout({ children }: { children: React.ReactNode }) {
+export default function ClientLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const { theme, toggleTheme } = useTheme();
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -114,20 +113,4 @@ function AppLayout({ children }: { children: React.ReactNode }) {
       </footer>
     </div>
   );
-}
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <html lang="zh-CN" suppressHydrationWarning>
-      <body className={inter.className}>
-        <ThemeProvider>
-          <AppLayout>{children}</AppLayout>
-        </ThemeProvider>
-      </body>
-    </html>
-  );
-}
+} 
