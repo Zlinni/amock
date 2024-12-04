@@ -337,36 +337,6 @@
         "msg": "success"
       },
       "id": "9b375e73-3746-4b28-9922-376b7c7c7196"
-    },
-    "4d4cd336-95f5-4ca0-8cc3-6179305e9e88": {
-      "path": "/api/album/{id}",
-      "method": "DELETE",
-      "description": "删除指定的专辑实体。路径中的 'id' 表示要删除的专辑的唯一标识符。",
-      "responseBody": {
-        "code": 0,
-        "data": {
-          "album": {
-            "album_id": "string",
-            "album_name": "string",
-            "artist": "string",
-            "release_date": "string",
-            "track_list": [
-              "string"
-            ],
-            "cover_image": "string",
-            "genre": "string",
-            "label": "string",
-            "duration": "string",
-            "rating": "number",
-            "description": "string",
-            "tags": [
-              "string"
-            ]
-          }
-        },
-        "msg": "success"
-      },
-      "id": "4d4cd336-95f5-4ca0-8cc3-6179305e9e88"
     }
   }
 }

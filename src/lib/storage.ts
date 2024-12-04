@@ -1,6 +1,7 @@
-import fs from 'fs';
-import path from 'path';
-import { MockEndpoint } from './openai';
+import fs from "fs";
+import path from "path";
+import { MockEndpoint } from "./openai";
+import { logger } from "./logger";
 
 interface EntityMockData {
   [entityName: string]: {
@@ -9,166 +10,109 @@ interface EntityMockData {
 }
 
 class MockStorage {
-  private storagePath: string;
-  private mockData: EntityMockData;
+  private filePath: string;
+  private backupPath: string;
 
   constructor() {
-    this.storagePath = path.join(process.cwd(), 'data', 'mocks.json');
-    this.mockData = {};
-    this.initStorage();
+    this.filePath = path.join(process.cwd(), "data", "mocks.json");
+    this.backupPath = path.join(process.cwd(), "data", "mocks.backup.json");
+    this.ensureStorageFile();
   }
 
-  private initStorage() {
-    try {
-      // 确保数据目录存在
-      const dataDir = path.join(process.cwd(), 'data');
-      if (!fs.existsSync(dataDir)) {
-        fs.mkdirSync(dataDir, { recursive: true });
-      }
+  private ensureStorageFile() {
+    const dir = path.dirname(this.filePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    if (!fs.existsSync(this.filePath)) {
+      fs.writeFileSync(this.filePath, "{}", "utf-8");
+    }
+  }
 
-      // 如果存储文件存在，则加载数据
-      if (fs.existsSync(this.storagePath)) {
-        const fileContent = fs.readFileSync(this.storagePath, 'utf-8').trim();
-        
-        // 如果文件为空，初始化为空对象
-        if (!fileContent) {
-          this.mockData = {};
-          this.saveToFile();
-          return;
+  private async readData(): Promise<EntityMockData> {
+    return await logger.logTask("读取存储文件", async () => {
+      try {
+        const content = fs.readFileSync(this.filePath, "utf-8");
+        if (!content.trim()) {
+          return {};
         }
-
-        try {
-          const data = JSON.parse(fileContent);
-          if (typeof data === 'object' && data !== null) {
-            this.mockData = data;
-          } else {
-            throw new Error('存储文件格式不正确');
+        return JSON.parse(content);
+      } catch (error) {
+        console.error("读取存储文件失败，尝试使用备份:", error);
+        if (fs.existsSync(this.backupPath)) {
+          const backupContent = fs.readFileSync(this.backupPath, "utf-8");
+          if (backupContent.trim()) {
+            return JSON.parse(backupContent);
           }
-        } catch (parseError) {
-          console.error('解析存储文件失败:', parseError);
-          // 如果文件损坏，备份并创建新文件
-          const backupPath = `${this.storagePath}.backup.${Date.now()}`;
-          fs.copyFileSync(this.storagePath, backupPath);
-          this.mockData = {};
-          this.saveToFile();
         }
-      } else {
-        // 如果文件不存在，创建空文件
-        this.mockData = {};
-        this.saveToFile();
+        return {};
       }
-    } catch (error) {
-      console.error('初始化存储失败:', error);
-      this.mockData = {};
-    }
+    });
   }
 
-  private saveToFile() {
-    try {
-      const jsonString = JSON.stringify(this.mockData, null, 2);
-      fs.writeFileSync(this.storagePath, jsonString);
-    } catch (error) {
-      console.error('保存数据失败:', error);
-      throw error;
-    }
+  private async writeData(data: EntityMockData): Promise<void> {
+    await logger.logTask("写入存储文件", async () => {
+      // 先备份当前文件
+      if (fs.existsSync(this.filePath)) {
+        fs.copyFileSync(this.filePath, this.backupPath);
+      }
+      // 写入新数据
+      fs.writeFileSync(this.filePath, JSON.stringify(data, null, 2), "utf-8");
+    });
   }
 
-  private getEntityNameFromEndpoint(endpoint: MockEndpoint): string {
-    if (!endpoint.path) {
-      throw new Error('端点路径不能为空');
-    }
-    
-    const parts = endpoint.path.split('/');
-    if (parts.length < 3 || !parts[2]) {
-      throw new Error('无效的端点路径格式');
-    }
-    
-    return parts[2];
-  }
+  async set(id: string, endpoint: MockEndpoint): Promise<void> {
+    return await logger.logTask(`保存端点: ${endpoint.path}`, async () => {
+      const data = await this.readData();
+      const entityName = this.getEntityName(endpoint.path);
 
-  async set(id: string, mockEndpoint: MockEndpoint): Promise<void> {
-    try {
-      if (!mockEndpoint || !mockEndpoint.path) {
-        throw new Error('无效的端点数据');
+      if (!data[entityName]) {
+        data[entityName] = {};
       }
 
-      const entityName = this.getEntityNameFromEndpoint(mockEndpoint);
-      
-      if (!this.mockData[entityName]) {
-        this.mockData[entityName] = {};
-      }
-      
-      this.mockData[entityName][id] = mockEndpoint;
-      this.saveToFile();
-    } catch (error) {
-      console.error('保存端点失败:', error);
-      throw error;
-    }
-  }
-
-  async setAll(entityName: string, mockEndpoints: Record<string, MockEndpoint>): Promise<void> {
-    try {
-      if (!entityName || typeof entityName !== 'string') {
-        throw new Error('实体名称无效');
-      }
-
-      this.mockData[entityName] = mockEndpoints;
-      this.saveToFile();
-    } catch (error) {
-      console.error('设置Mock数据失败:', error);
-      throw error;
-    }
-  }
-
-  async get(entityName: string, id: string): Promise<MockEndpoint | undefined> {
-    return this.mockData[entityName]?.[id];
+      data[entityName][id] = endpoint;
+      await this.writeData(data);
+    });
   }
 
   async getAll(): Promise<MockEndpoint[]> {
-    return Object.values(this.mockData)
-      .flatMap(entityEndpoints => Object.values(entityEndpoints));
+    return await logger.logTask("获取所有端点", async () => {
+      const data = await this.readData();
+      return Object.values(data).flatMap((entityData) =>
+        Object.values(entityData)
+      );
+    });
   }
 
-  async getAllByEntity(entityName: string): Promise<MockEndpoint[]> {
-    return Object.values(this.mockData[entityName] || {});
+  async delete(id: string, endpoint: MockEndpoint): Promise<boolean> {
+    return await logger.logTask(`删除端点: ${endpoint.path}`, async () => {
+      const data = await this.readData();
+      const entityName = this.getEntityName(endpoint.path);
+
+      if (!data[entityName] || !data[entityName][id]) {
+        return false;
+      }
+
+      delete data[entityName][id];
+
+      // 如果该实体下没有更多端点，删除实体
+      if (Object.keys(data[entityName]).length === 0) {
+        delete data[entityName];
+      }
+
+      await this.writeData(data);
+      return true;
+    });
   }
 
-  async delete(id: string, mockEndpoint: MockEndpoint): Promise<boolean> {
-    try {
-      if (!mockEndpoint || !mockEndpoint.path) {
-        throw new Error('无效的端点数据');
-      }
-
-      const entityName = this.getEntityNameFromEndpoint(mockEndpoint);
-      
-      if (this.mockData[entityName]?.[id]) {
-        delete this.mockData[entityName][id];
-        
-        // 如果实体下没有更多端点，删除实体
-        if (Object.keys(this.mockData[entityName]).length === 0) {
-          delete this.mockData[entityName];
-        }
-        
-        this.saveToFile();
-        return true;
-      }
-      
-      return false;
-    } catch (error) {
-      console.error('删除端点失败:', error);
-      throw error;
+  private getEntityName(path: string): string {
+    // 从路径中提取实体名称
+    const match = path.match(/^\/api\/([^/{]+)/);
+    if (!match) {
+      throw new Error("无效的API路径");
     }
-  }
-
-  async clear(): Promise<void> {
-    this.mockData = {};
-    this.saveToFile();
-  }
-
-  async getEntities(): Promise<string[]> {
-    return Object.keys(this.mockData);
+    return match[1];
   }
 }
 
-// 创建单例实例
-export const mockStorage = new MockStorage(); 
+export const mockStorage = new MockStorage();

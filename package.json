@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --hostname 192.168.126.1",
+    "dev": "next dev --hostname 192.168.8.180",
     "build": "next build",
-    "start": "next start --hostname 192.168.126.1",
+    "start": "next start --hostname 192.168.8.180",
     "lint": "next lint"
   },
   "dependencies": {
@@ -21,6 +21,7 @@
     "@radix-ui/react-tooltip": "^1.1.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
     "dedent": "^1.5.3",
     "lucide-react": "^0.462.0",
     "next": "15.0.3",

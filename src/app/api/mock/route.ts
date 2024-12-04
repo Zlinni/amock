@@ -2,14 +2,14 @@
  * @Author: zlinni zlinni@peropero.net
  * @Date: 2024-12-03 11:44:26
  * @LastEditors: zlinni zlinni@peropero.net
- * @LastEditTime: 2024-12-03 18:12:22
+ * @LastEditTime: 2024-12-04 10:33:32
  * @FilePath: \amock\src\app\api\mock\route.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
 import { NextRequest, NextResponse } from "next/server";
 import { mockStorage } from "@/lib/storage";
-import { v4 as uuidv4 } from "uuid";
-import { generateMockEndpoints, generateSingleEndpoint } from "@/lib/openai";
+import { generateMockEndpoints } from "@/lib/openai";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,15 +26,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 生成 Mock 端点
     const mockEndpoints = await generateMockEndpoints(description);
-    
-    // 并发保存所有端点
-    await Promise.all(
-      mockEndpoints.map(async (endpoint) => {
-        const id = uuidv4();
-        await mockStorage.set(id, { ...endpoint, id });
-      })
-    );
+    console.log("生成的端点数量:", mockEndpoints.length);
+
+    // 串行保存所有端点
+    await logger.logTask("保存所有端点", async () => {
+      for (const endpoint of mockEndpoints) {
+        await mockStorage.set(endpoint.id, endpoint);
+      }
+    });
 
     return NextResponse.json({
       code: 0,
